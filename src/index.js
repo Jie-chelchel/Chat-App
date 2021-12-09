@@ -10,16 +10,16 @@ const io = socketio(server);
 app.use(express.static(publicDirectoryPath));
 
 io.on("connection", (socket) => {
-  console.log("new webSockets connection");
-  // socket.emit("countUpdated", count);
-  // socket.on("increment", () => {
-  //   count += 1;
-  //   //socket.emit("countUpdated", count);
-  //   io.emit("countUpdated", count);
-  // });
   socket.emit("message", "welcome");
+
+  socket.broadcast.emit("message", "A new user has joined");
+
   socket.on("sendMessage", (msg) => {
     io.emit("message", msg);
+  });
+
+  socket.on("disconnect", () => {
+    io.emit("message", " A user has left");
   });
 });
 
