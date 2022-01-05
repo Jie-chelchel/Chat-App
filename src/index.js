@@ -9,6 +9,12 @@ const socketio = require("socket.io");
 const io = socketio(server);
 const Filter = require("bad-words");
 const {
+  addUser,
+  getUsersInRoom,
+  removeUser,
+  getUser,
+} = require("./utils/users");
+const {
   generateMessage,
   generateLocationMessage,
 } = require("./utils/messages");
@@ -16,9 +22,21 @@ const {
 app.use(express.static(publicDirectoryPath));
 
 io.on("connection", (socket) => {
-  socket.emit("message", generateMessage("Welcome"));
+  socket.on("join", ({ username, room }, callback) => {
+    const { error, user } = addUser({ id: socket.id, username, room });
 
-  socket.broadcast.emit("message", generateMessage("A new user has joined"));
+    if (error) {
+      return callback(error);
+    }
+    socket.join(user.room);
+    socket.emit("message", generateMessage("Welcome"));
+
+    socket.broadcast
+      .to(user.room)
+      .emit("message", generateMessage(`${user.username} has joined!`));
+
+    callback();
+  });
 
   socket.on("sendMessage", (msg, callback) => {
     const filter = new Filter();
@@ -27,12 +45,19 @@ io.on("connection", (socket) => {
       return callback("Profanity is not allowed");
     }
 
-    io.emit("message", generateMessage(msg));
+    io.to("1").emit("message", generateMessage(msg));
     callback();
   });
 
   socket.on("disconnect", () => {
-    io.emit("message", generateMessage(" A user has left"));
+    const user = removeUser(socket.id);
+
+    if (user) {
+      io.to(user.room).emit(
+        "message",
+        generateMessage(`${user.username} has left`)
+      );
+    }
   });
 
   socket.on("sendLocation", (location, callback) => {
