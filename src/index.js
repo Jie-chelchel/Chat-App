@@ -8,13 +8,13 @@ const server = http.createServer(app);
 const socketio = require("socket.io");
 const io = socketio(server);
 const Filter = require("bad-words");
-
+const { generateMessage } = require("./utils/messages");
 app.use(express.static(publicDirectoryPath));
 
 io.on("connection", (socket) => {
-  socket.emit("message", "welcome");
+  socket.emit("message", generateMessage("Welcome"));
 
-  socket.broadcast.emit("message", "A new user has joined");
+  socket.broadcast.emit("message", generateMessage("A new user has joined"));
 
   socket.on("sendMessage", (msg, callback) => {
     const filter = new Filter();
@@ -23,12 +23,12 @@ io.on("connection", (socket) => {
       return callback("Profanity is not allowed");
     }
 
-    io.emit("message", msg);
+    io.emit("message", generateMessage(msg));
     callback();
   });
 
   socket.on("disconnect", () => {
-    io.emit("message", " A user has left");
+    io.emit("message", generateMessage(" A user has left"));
   });
 
   socket.on("sendLocation", (location, callback) => {
