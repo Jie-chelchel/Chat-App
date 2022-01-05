@@ -8,7 +8,11 @@ const server = http.createServer(app);
 const socketio = require("socket.io");
 const io = socketio(server);
 const Filter = require("bad-words");
-const { generateMessage } = require("./utils/messages");
+const {
+  generateMessage,
+  generateLocationMessage,
+} = require("./utils/messages");
+
 app.use(express.static(publicDirectoryPath));
 
 io.on("connection", (socket) => {
@@ -34,7 +38,9 @@ io.on("connection", (socket) => {
   socket.on("sendLocation", (location, callback) => {
     io.emit(
       "sendLocationMessage",
-      `https://google.com/maps?q=${location.latitude},${location.longitude}`
+      generateLocationMessage(
+        `https://google.com/maps?q=${location.latitude},${location.longitude}`
+      )
     );
     callback();
   });
